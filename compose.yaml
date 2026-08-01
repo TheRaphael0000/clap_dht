@@ -1,0 +1,19 @@
+services:
+    updater:
+        build: .
+        env_file:
+            - .env
+        command: ["clap_dht_updater"]
+        volumes:
+            - ./music:/music:ro
+        depends_on:
+            - db
+
+    db:
+        image: pgvector/pgvector:pg16
+        env_file:
+            - .env
+        volumes:
+            - ./data/db:/var/lib/postgresql/data
+        ports:
+            - 5432:5432
