@@ -7,8 +7,8 @@ from clap_dht.updater import Updater
 
 def updater(args):
     print("updater")
-    updater = Updater(drop_all=args.drop, batch_size=args.batch)
-    updater.update_db(args.force)
+    updater = Updater(drop_all=args.drop, batch_size=args.batch, force_process=args.force)
+    updater.start()
 
 def navidrome(args):
     navidrome = Navidrome()

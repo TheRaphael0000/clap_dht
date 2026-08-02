@@ -25,33 +25,35 @@ class AudioFeatureExtractor:
         self.model = ClapAudioModelWithProjection.from_pretrained(CLAP_MODEL, local_files_only=True).to(self.device)
         self.model.eval()
         
-    def process_buffers(self, batch):
+    def process_batch(self, batch, subpaths):
         fingerprints = []
         audio_arrays = []
 
         with ThreadPoolExecutor(max_workers=MAX_WORKER) as executor:
-            # Submit tasks and map each Future object to its URL
-            futures = [executor.submit(self.fpcalc_resample, audio_bytes) for audio_bytes in batch]
+            futures = {}
 
-            # as_completed yields results as soon as each individual thread finishes
-            for future in as_completed(futures):
+            for audio_bytes in batch:
+                futures[executor.submit(self.fpcalc, audio_bytes)] = self.fpcalc
+                futures[executor.submit(self.resample, audio_bytes)] = self.resample
+
+            for future, subpath in zip(as_completed(futures), subpaths):
+                type = futures[future]
                 try:
-                    fingerprint, audio_array = future.result()
-                    fingerprints.append(fingerprint)
-                    audio_arrays.append(audio_array)
+                    result = future.result()
                 except Exception as exc:
-                    print(f"Task generated an exception: {exc}")
+                    logger.error(f"Error: '{subpath}'")
+                    logger.error(exc)
+                    result = np.array([])
 
-        # for audio_bytes in batch:
-        #     fingerprints.append()
-        #     audio_arrays.append()
+                if type == self.fpcalc:
+                    fingerprints.append(result)
+                elif type == self.resample:
+                    audio_arrays.append(result)
 
         embeddings = self.clap(audio_arrays)
 
         return zip(fingerprints, embeddings)
 
-    def fpcalc_resample(self, audio_bytes):
-        return self.fpcalc(audio_bytes), self.resample(audio_bytes)
 
     def fpcalc(self, audio_bytes):
         logger.debug("fpcalc start")
