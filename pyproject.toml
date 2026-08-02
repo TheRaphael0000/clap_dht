@@ -12,12 +12,12 @@ dependencies = [
     "sqlalchemy>=2.0.50",
     "opendht>=4.0.0",
     "numpy>=2.5.1",
-    "pyacoustid>=1.3.1",
     "transformers>=5.14.1",
     "torch>=2.13.0",
     "torchcodec>=0.15.0",
     "torchaudio>=2.11.0",
+    "filetype>=1.2.0",
 ]
 
 [project.scripts]
-clap_dht_updater = "clap_dht.updater:main"
+clap_dht = "clap_dht.cli:main"

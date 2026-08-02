@@ -17,7 +17,6 @@ async def query(id, limit=100):
 
 
 async def main():
-
     for r,d in await query(1):
         print(r.id, d, r.path)
 
