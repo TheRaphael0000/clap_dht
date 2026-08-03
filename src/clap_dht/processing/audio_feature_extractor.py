@@ -14,6 +14,7 @@ CLAP_MODEL = "laion/clap-htsat-fused"
 CLAP_SAMPLING_RATE = 48000
 FINGER_PRINT_SIZE = 120
 MAX_WORKER = 8
+MAX_AUDIO_SECONDS = 60
 
 def threadpool_pipeline(func, batch, subpaths, max_workers):
     output = {}
@@ -52,7 +53,7 @@ class AudioFeatureExtractor:
     def process_batch(self, batch, subpaths):
         logger.debug("process batch start")
 
-        with Timer("batch resampling"):
+        with Timer("batch resample"):
             audio_arrays = threadpool_pipeline(self.resample, batch, subpaths, self.max_workers)
 
         with Timer("batch clap"):
@@ -82,16 +83,34 @@ class AudioFeatureExtractor:
 
     def resample(self, audio_bytes):
         with Timer("resample"):
-            buffer = io.BytesIO(audio_bytes)
-            waveform, original_sr = torchaudio.load(buffer)
-            if waveform.shape[0] > 1:
-                waveform = torch.mean(waveform, dim=0, keepdim=True)
-
-            if original_sr != CLAP_SAMPLING_RATE:
-                waveform = torchaudio.functional.resample(waveform, original_sr, CLAP_SAMPLING_RATE)
-
-            audio_array = waveform.squeeze(0).numpy()
-        return audio_array
+            cmd = [
+                "ffmpeg",
+                "-threads", "1",
+                "-i", "pipe:0",
+                "-ac", "1",
+                "-ar", str(CLAP_SAMPLING_RATE),
+                "-t", str(MAX_AUDIO_SECONDS),
+                "-f", "f32le",
+                "-acodec", "pcm_f32le",
+                "-v", "quiet",
+                "pipe:1"
+            ]
+            
+            try:
+                result = subprocess.run(
+                    cmd,
+                    input=audio_bytes,
+                    capture_output=True,
+                    check=True
+                )
+                
+                audio_array = np.frombuffer(result.stdout, dtype=np.float32)
+                
+                return audio_array.copy()
+                
+            except subprocess.CalledProcessError as e:
+                logger.error(f"FFmpeg decoding failed: {e.stderr or 'Unknown error'}")
+                return None
 
     def clap(self, audio_arrays):
         with Timer("clap processor"):

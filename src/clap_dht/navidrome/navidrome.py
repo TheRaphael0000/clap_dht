@@ -1,7 +1,7 @@
 import hashlib
 import os
 import requests
-from sqlalchemy import bindparam, select, update
+from sqlalchemy import bindparam, select, update, func
 
 from clap_dht.db import DB, Embedding
 
@@ -94,3 +94,7 @@ class Navidrome:
             logger.info("Updating CLAP_DHT DB")
             session.execute(update(Embedding), lookup_data)
             session.commit()
+
+            unmateched_count = session.scalar(select(func.count()).select_from(Embedding).where(Embedding.external_id == None))
+            total_count = session.scalar(select(func.count()).select_from(Embedding))
+            logger.info(f"Unmatched: {unmateched_count}/{total_count}")
