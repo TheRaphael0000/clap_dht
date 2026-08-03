@@ -10,7 +10,7 @@ logger = logging.getLogger()
 
 def command_update(args):
     logger.debug("command update")
-    updater = Updater(drop_all=args.drop, batch_size=args.batch, force_process=args.force)
+    updater = Updater(drop_all=args.drop, batch_size=args.batch, max_workers=args.workers, force_process=args.force)
     updater.start()
 
 def command_navidrome(args):
@@ -41,6 +41,7 @@ def main():
     subparser_update.add_argument('--force', action='store_true')
     subparser_update.add_argument('--drop', action='store_true')
     subparser_update.add_argument('--batch', type=int, default=8)
+    subparser_update.add_argument('--workers', type=int, default=8)
 
     subparser_update.set_defaults(func=command_update)
 
