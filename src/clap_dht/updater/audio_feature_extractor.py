@@ -4,7 +4,10 @@ import json
 import numpy as np
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
+import io
+import base64
 
+from tinytag import TinyTag
 import transformers
 from transformers import ClapAudioModelWithProjection, ClapProcessor
 
@@ -15,9 +18,8 @@ logger = logging.getLogger()
 
 CLAP_MODEL = "laion/clap-htsat-fused"
 CLAP_SAMPLING_RATE = 48000
-FINGER_PRINT_SIZE = 120
-MAX_WORKER = 8
 MAX_AUDIO_SECONDS = 60
+
 
 def threadpool_pipeline(func, batch, subpaths, max_workers):
     output = {}
@@ -29,16 +31,79 @@ def threadpool_pipeline(func, batch, subpaths, max_workers):
             subpath = futures[future]
             try:
                 result = future.result()
-            except subprocess.CalledProcessError as e:
-                logger.error(f"Can't process: '{subpath}' \n{e}")
+            except Exception as e:
+                logger.error(f"Can't process: '{subpath}' for '{func.__name__}' \n{e}")
                 result = None
             output[subpath] = result
     return [output[subpath] for subpath in subpaths]
 
 
+def fingerprint_in_tags(audio_bytes):
+    bytes_io = io.BytesIO(initial_bytes=audio_bytes)
+    tags = TinyTag.get(file_obj=bytes_io)
+    possible_keys = ["acoustid_fingerprint"]
+
+    for pk in possible_keys:
+        if pk in tags.other:
+            for base64_value in tags.other[pk]:
+                if base64_value is None:
+                    continue
+                return base64_value
+    return None
+
+def fingerprint_with_fpcalc(audio_bytes):
+    result = subprocess.run(
+        # use the same args as picard:
+        # https://github.com/metabrainz/picard/blob/5a35d3bbde0175558bb2f441fcd952d7f18f4798/picard/acoustid/__init__.py#L285
+        ["fpcalc", "-json", "-length", "120", "-"],
+        input=audio_bytes,
+        capture_output=True,
+        check=True,
+    )
+    fpdata = json.loads(result.stdout)
+    fingerprint_base64 = fpdata["fingerprint"]
+    return fingerprint_base64
+
+
+def fingerprint_to_bytes(base64_value):
+    missing_padding = len(base64_value) % 4
+    if missing_padding:
+        base64_value += "=" * (4 - missing_padding)
+    binary_value = base64.urlsafe_b64decode(base64_value)
+    return binary_value
+
+
+def resample_with_ffmpeg(audio_bytes):
+    try:
+        result = subprocess.run([
+                "ffmpeg",
+                "-threads", "1",
+                "-i", "pipe:0",
+                "-ac", "1",
+                "-ar", str(CLAP_SAMPLING_RATE),
+                "-t", str(MAX_AUDIO_SECONDS),
+                "-f", "f32le",
+                "-acodec", "pcm_f32le",
+                "-v", "quiet",
+                "pipe:1"
+            ],
+            input=audio_bytes,
+            capture_output=True,
+            check=True
+        )
+        audio_array = np.frombuffer(result.stdout, dtype=np.float32)
+        return audio_array.copy()
+        
+    except subprocess.CalledProcessError as e:
+        logger.error(f"FFmpeg decoding failed: {e.stderr or 'Unknown error'}")
+        return None
+
+
 class AudioFeatureExtractor:
-    def __init__(self, max_workers):
+    def __init__(self, max_workers, ignore_existing_fingerprint):
+
         self.max_workers = max_workers
+        self.ignore_existing_fingerprint = ignore_existing_fingerprint
         logger.debug(f"max_workers: {self.max_workers}")
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -53,64 +118,35 @@ class AudioFeatureExtractor:
     def process_batch(self, batch, subpaths):
         logger.debug("process batch start")
 
+        with Timer("batch fingerprint"):
+            fingerprints = threadpool_pipeline(self.fingerprint, batch, subpaths, self.max_workers)
+
         with Timer("batch resample"):
             audio_arrays = threadpool_pipeline(self.resample, batch, subpaths, self.max_workers)
 
         with Timer("batch clap"):
             embeddings = self.clap(audio_arrays)
 
-        with Timer("batch fingerprint"):
-            fingerprints = threadpool_pipeline(self.fingerprint, batch, subpaths, self.max_workers)
-
         output = list(zip(fingerprints, embeddings))
         
         logger.debug(f"process batch end {len(output)}")
         return output
 
+    def resample(self, audio_bytes):
+        with Timer("resample"):
+            return resample_with_ffmpeg(audio_bytes)
 
     def fingerprint(self, audio_bytes):
         with Timer("fingerprint"):
-            result = subprocess.run(
-                ["fpcalc", "-json", "-raw", "-length", f"{FINGER_PRINT_SIZE}", "-"],
-                input=audio_bytes,
-                capture_output=True,
-                check=True,
-            )
+            if not self.ignore_existing_fingerprint:
+                filetag_fingerprint = fingerprint_in_tags(audio_bytes)
+                if filetag_fingerprint:
+                    return fingerprint_to_bytes(filetag_fingerprint)
 
-            fpdata = json.loads(result.stdout)
-            fingerprint = np.array(fpdata["fingerprint"], dtype=np.uint32).tobytes()
-        return fingerprint
+            fpcalc_fingerprint = fingerprint_with_fpcalc(audio_bytes)
 
-    def resample(self, audio_bytes):
-        with Timer("resample"):
-            cmd = [
-                "ffmpeg",
-                "-threads", "1",
-                "-i", "pipe:0",
-                "-ac", "1",
-                "-ar", str(CLAP_SAMPLING_RATE),
-                "-t", str(MAX_AUDIO_SECONDS),
-                "-f", "f32le",
-                "-acodec", "pcm_f32le",
-                "-v", "quiet",
-                "pipe:1"
-            ]
-            
-            try:
-                result = subprocess.run(
-                    cmd,
-                    input=audio_bytes,
-                    capture_output=True,
-                    check=True
-                )
-                
-                audio_array = np.frombuffer(result.stdout, dtype=np.float32)
-                
-                return audio_array.copy()
-                
-            except subprocess.CalledProcessError as e:
-                logger.error(f"FFmpeg decoding failed: {e.stderr or 'Unknown error'}")
-                return None
+            return fingerprint_to_bytes(fpcalc_fingerprint)
+        return None
 
     def clap(self, audio_arrays):
         with Timer("clap processor"):

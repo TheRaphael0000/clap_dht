@@ -27,7 +27,7 @@ def dataloader_cleanup(dataloader_instance=None):
             pass
 
 class Updater:
-    def __init__(self, drop_all, batch_size, max_workers, force_process, prefetch_factor):
+    def __init__(self, drop_all, batch_size, max_workers, force_process, prefetch_factor, ignore_existing_fingerprint):
         self.root_dir = pathlib.Path(os.getenv('ROOT_DIR'))
         self.db = DB()
         self.db.init(drop_all=drop_all)
@@ -37,7 +37,7 @@ class Updater:
         
         atexit.register(dataloader_cleanup, self.dataloader)
         
-        self.audio_feature_extractor = AudioFeatureExtractor(max_workers)
+        self.audio_feature_extractor = AudioFeatureExtractor(max_workers, ignore_existing_fingerprint)
         self.to_save_queue = queue.Queue()
         
 
