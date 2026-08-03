@@ -1,15 +1,18 @@
-import io
 import torch
 import subprocess
 import json
-import torchaudio
 import numpy as np
 import logging
-
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+import transformers
+from transformers import ClapAudioModelWithProjection, ClapProcessor
+
 from clap_dht.utils import Timer
 
+transformers.logging.set_verbosity_error()
 logger = logging.getLogger()
+
 CLAP_MODEL = "laion/clap-htsat-fused"
 CLAP_SAMPLING_RATE = 48000
 FINGER_PRINT_SIZE = 120
@@ -35,9 +38,6 @@ def threadpool_pipeline(func, batch, subpaths, max_workers):
 
 class AudioFeatureExtractor:
     def __init__(self, max_workers):
-        import transformers
-        transformers.logging.set_verbosity_error()
-        from transformers import ClapAudioModelWithProjection, ClapProcessor
         self.max_workers = max_workers
         logger.debug(f"max_workers: {self.max_workers}")
 

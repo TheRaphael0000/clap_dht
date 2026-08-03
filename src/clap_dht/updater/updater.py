@@ -9,8 +9,8 @@ from sqlalchemy.dialects.postgresql import insert
 
 from torch.utils.data import DataLoader
 
-from clap_dht.processing import AudioFeatureExtractor
 from clap_dht.db import DB, Embedding
+from clap_dht.updater.audio_feature_extractor import AudioFeatureExtractor
 from clap_dht.updater.filesystem_dataset import FilesystemDataset
 
 from clap_dht.utils import Timer
