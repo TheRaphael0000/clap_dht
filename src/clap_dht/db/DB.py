@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 import os
 from .Base import Base
 
-from ..utils import logger
+import logging
+logger = logging.getLogger()
 
 
 class DB():

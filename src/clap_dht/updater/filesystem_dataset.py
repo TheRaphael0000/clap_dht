@@ -7,14 +7,28 @@ import filetype
 from torch.utils.data import IterableDataset
 
 from clap_dht.db import DB, Embedding
-from clap_dht.utils import logger
+
+import logging
+logger = logging.getLogger()
+
+class DBChecker:
+    def __init__(self):
+        self.db = DB()
+
+    def check(self, subpath):
+        with self.db as session:
+            is_exist = session.scalar(select(exists().where(Embedding.path == subpath)))
+            if is_exist:
+                return True
+        return False
 
 
-class AudioBytesDataset(IterableDataset):
+
+class FilesystemDataset(IterableDataset):
     def __init__(self, root_dir, force_process):
         self.root_dir = root_dir
-        self.db = DB()
         self.force_process = force_process
+        self.db_checker = DBChecker()
 
     def __iter__(self):
         for fullpath in pathlib.Path(self.root_dir).rglob("*"):
@@ -25,16 +39,13 @@ class AudioBytesDataset(IterableDataset):
                 continue
 
             if not self.force_process:
-                with self.db as session:
-                    is_exist = session.scalar(select(exists().where(Embedding.path == subpath)))
-                if is_exist:
+                if self.db_checker.check(subpath):
                     logger.info(f"Skipped (already in db): '{subpath}'")
                     continue
 
             audio_bytes = open(fullpath, "rb").read()
 
-            kind = filetype.guess(audio_bytes)
-            if kind is None or not kind.mime.startswith("audio"):
+            if not filetype.is_audio(audio_bytes):
                 logger.info(f"Skipped (not audio): '{subpath}'")
                 continue
 

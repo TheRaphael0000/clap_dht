@@ -4,13 +4,32 @@ import subprocess
 import json
 import torchaudio
 import numpy as np
-from clap_dht.utils import logger
+import logging
+
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+logger = logging.getLogger()
 CLAP_MODEL = "laion/clap-htsat-fused"
 CLAP_SAMPLING_RATE = 48000
 FINGER_PRINT_SIZE = 120
 MAX_WORKER = 8
+
+def threadpool_pipeline(func, batch, subpaths):
+    output = {}
+    with ThreadPoolExecutor(max_workers=MAX_WORKER) as executor:
+        futures = {}
+        for audio_bytes, subpath in zip(batch, subpaths):
+            futures[executor.submit(func, audio_bytes)] = subpath
+        for future in as_completed(futures):
+            subpath = futures[future]
+            try:
+                result = future.result()
+            except subprocess.CalledProcessError as e:
+                logger.error(f"Can't process: '{subpath}' \n{e}")
+                result = None
+            output[subpath] = result
+    return [output[subpath] for subpath in subpaths]
+
 
 class AudioFeatureExtractor:
     def __init__(self, batch_size=8):
@@ -18,41 +37,35 @@ class AudioFeatureExtractor:
         transformers.logging.set_verbosity_error()
         from transformers import ClapAudioModelWithProjection, ClapProcessor
         self.batch_size = batch_size
+        logger.debug(f"batch_size: {self.batch_size}")
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        
+        logger.debug(f"Embedding Projection Device: {self.device}")
+
+        logger.debug("loading clap model...")
         self.processor = ClapProcessor.from_pretrained(CLAP_MODEL, local_files_only=True)
         self.model = ClapAudioModelWithProjection.from_pretrained(CLAP_MODEL, local_files_only=True).to(self.device)
+        logger.debug("clap model loaded")
         self.model.eval()
         
     def process_batch(self, batch, subpaths):
-        fingerprints = []
-        audio_arrays = []
+        logger.debug("process batch start")
 
-        with ThreadPoolExecutor(max_workers=MAX_WORKER) as executor:
-            futures = {}
-
-            for audio_bytes in batch:
-                futures[executor.submit(self.fpcalc, audio_bytes)] = self.fpcalc
-                futures[executor.submit(self.resample, audio_bytes)] = self.resample
-
-            for future, subpath in zip(as_completed(futures), subpaths):
-                type = futures[future]
-                try:
-                    result = future.result()
-                except Exception as exc:
-                    logger.error(f"Error: '{subpath}'")
-                    logger.error(exc)
-                    result = np.array([])
-
-                if type == self.fpcalc:
-                    fingerprints.append(result)
-                elif type == self.resample:
-                    audio_arrays.append(result)
-
+        logger.debug("batch resampling start")
+        audio_arrays = threadpool_pipeline(self.resample, batch, subpaths)
+        logger.debug(f"batch resampling end {len(audio_arrays)}")
+        logger.debug("batch clap start")
         embeddings = self.clap(audio_arrays)
+        logger.debug(f"batch clap end {len(embeddings)}")
 
-        return zip(fingerprints, embeddings)
+        logger.debug("batch fingerprint start")
+        fingerprints = threadpool_pipeline(self.fpcalc, batch, subpaths)
+        logger.debug(f"batch fingerprint start {len(fingerprints)}")
+
+        output = list(zip(fingerprints, embeddings))
+        
+        logger.debug(f"process batch end {len(output)}")
+        return output
 
 
     def fpcalc(self, audio_bytes):
