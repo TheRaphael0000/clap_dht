@@ -3,6 +3,10 @@ import json
 from sqlalchemy import select
 
 from clap_dht.db import DB, Embedding
+import logging
+
+
+logger = logging.getLogger("QUERY")
 
 
 class Query:
@@ -16,6 +20,7 @@ class Query:
     }
 
     def __init__(self, proximity_function, limit, json, path = None, external_id = None):
+        logger.debug(f"Query created proximity_function={proximity_function} limit={limit} json={json} path={path} external_id={external_id}")
         self.db = DB()
         self.proximity_function = self.proximity_functions[proximity_function][0]
         self.order_by_factor = self.proximity_functions[proximity_function][1]
@@ -32,12 +37,12 @@ class Query:
 
     def get_text(self):
         results = self.get()
-        output = [f"{dist:4f} - '{embedding.path}'" for embedding, dist in results]
+        output = [f"{score:4f} - '{embedding.path}'" for embedding, score in results]
         return output
 
     def get_json(self):
         results = self.get()
-        output = [{"path": embedding.path, "external_id": embedding.external_id, "dist": dist} for embedding, dist in results]
+        output = [{"path": embedding.path, "external_id": embedding.external_id, "score": score} for embedding, score in results]
         return output
 
     def get(self):
@@ -45,7 +50,10 @@ class Query:
             embedding = self.get_embedding_by_path(self.path)
         if self.external_id is not None:
             embedding = self.get_embedding_by_external_id(self.external_id)
-        return self.query(embedding)
+        if embedding is None:
+            raise Exception("Embedding not found")
+        results = self.query(embedding)
+        return results
 
 
     def get_embedding_by_path(self, path):
@@ -58,7 +66,7 @@ class Query:
     
     def query(self, embedding):
         with self.db as session:
-            distance_expr = self.proximity_function(embedding).label("metric")
-            stmt = select(Embedding, distance_expr).filter(distance_expr > 0).order_by(self.order_by_factor * distance_expr).limit(self.limit)
+            proximity_expr = self.proximity_function(embedding).label("metric")
+            stmt = select(Embedding, proximity_expr).filter(proximity_expr > 0).order_by(self.order_by_factor * proximity_expr).limit(self.limit)
             results = session.execute(stmt).all()
             return [r for r in results]

@@ -11,6 +11,6 @@ wheels/
 music
 *.tmp
 
-data
+data*/
 
 .env

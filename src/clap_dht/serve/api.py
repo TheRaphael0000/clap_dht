@@ -36,4 +36,4 @@ class API:
  
     def start(self):
         logger.debug(f"host={self.host}, port={self.port}, reload={self.reload}")
-        uvicorn.run("clap_dht.serve.rest.api:app", host=self.host, port=self.port, reload=self.reload)
+        uvicorn.run("clap_dht.serve.api:app", host=self.host, port=self.port, reload=self.reload)
