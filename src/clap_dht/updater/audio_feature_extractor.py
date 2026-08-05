@@ -14,7 +14,7 @@ from transformers import ClapAudioModelWithProjection, ClapProcessor
 from clap_dht.utils import Timer
 
 transformers.logging.set_verbosity_error()
-logger = logging.getLogger()
+logger = logging.getLogger("UPDATER")
 
 CLAP_MODEL = "laion/clap-htsat-fused"
 CLAP_SAMPLING_RATE = 48000

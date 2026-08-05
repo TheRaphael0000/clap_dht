@@ -5,7 +5,7 @@ import os
 from .Base import Base
 
 import logging
-logger = logging.getLogger()
+logger = logging.getLogger("DB")
 
 
 class DB():

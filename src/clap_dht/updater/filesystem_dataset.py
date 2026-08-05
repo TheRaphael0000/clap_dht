@@ -9,7 +9,7 @@ from torch.utils.data import IterableDataset
 from clap_dht.db import DB, Embedding
 
 import logging
-logger = logging.getLogger()
+logger = logging.getLogger("UPDATER")
 
 class DBChecker:
     def __init__(self):

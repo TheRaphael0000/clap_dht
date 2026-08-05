@@ -6,7 +6,7 @@ from sqlalchemy import bindparam, select, update, func
 from clap_dht.db import DB, Embedding
 
 import logging
-logger = logging.getLogger()
+logger = logging.getLogger("NAVIDROME")
 
 
 import sqlite3

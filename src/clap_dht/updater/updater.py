@@ -15,7 +15,7 @@ from clap_dht.updater.filesystem_dataset import FilesystemDataset
 
 from clap_dht.utils import Timer
 
-logger = logging.getLogger()
+logger = logging.getLogger("UPDATER")
 
 
 def dataloader_cleanup(dataloader_instance=None):

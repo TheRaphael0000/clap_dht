@@ -1,7 +1,7 @@
 import timeit
 import logging
 
-logger = logging.getLogger()
+logger = logging.getLogger("UTILS")
 
 class Timer:
     def __init__(self, label = "", info = False):

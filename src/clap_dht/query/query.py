@@ -25,13 +25,20 @@ class Query:
         self.external_id = external_id
 
     def __str__(self):
-        results = self.get()
         if self.json:
-            output = [{"path": embedding.path, "external_id": embedding.external_id, "dist": dist} for embedding, dist in results]
-            return json.dumps(output, indent=2)
+            return json.dumps(self.get_json(), indent=2)
         else:
-            return "\n".join([f"{dist:4f} - '{embedding.path}'" for embedding, dist in results])
+            return "\n".join(self.get_text())
 
+    def get_text(self):
+        results = self.get()
+        output = [f"{dist:4f} - '{embedding.path}'" for embedding, dist in results]
+        return output
+
+    def get_json(self):
+        results = self.get()
+        output = [{"path": embedding.path, "external_id": embedding.external_id, "dist": dist} for embedding, dist in results]
+        return output
 
     def get(self):
         if self.path is not None:

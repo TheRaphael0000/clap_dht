@@ -7,7 +7,7 @@ from clap_dht.db import Embedding
 
 from .query import Query
 
-logger = logging.getLogger()
+logger = logging.getLogger("CLI")
 
 
 def add_subparser(subparsers: _SubParsersAction[ArgumentParser]):

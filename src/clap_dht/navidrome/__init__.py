@@ -4,7 +4,7 @@ from argparse import _SubParsersAction, ArgumentParser
 
 import logging
 
-logger = logging.getLogger()
+logger = logging.getLogger("NAVIDROME")
 
 def add_subparser(subparsers: _SubParsersAction[ArgumentParser]):
     subparser = subparsers.add_parser(

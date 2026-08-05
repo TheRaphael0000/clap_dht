@@ -64,6 +64,7 @@ dependencies = [
     { name = "torchaudio" },
     { name = "torchcodec" },
     { name = "transformers" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
@@ -82,6 +83,7 @@ requires-dist = [
     { name = "torchaudio", specifier = ">=2.11.0" },
     { name = "torchcodec", specifier = ">=0.15.0" },
     { name = "transformers", specifier = ">=5.14.1" },
+    { name = "uvicorn", specifier = ">=0.52.0" },
 ]
 
 [[package]]

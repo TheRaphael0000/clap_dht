@@ -5,7 +5,7 @@ from argparse import _SubParsersAction, ArgumentParser
 import logging
 
 
-logger = logging.getLogger()
+logger = logging.getLogger("CLI")
 
 def add_subparser(subparsers: _SubParsersAction[ArgumentParser]):
     subparser = subparsers.add_parser(
@@ -20,10 +20,10 @@ def add_subparser(subparsers: _SubParsersAction[ArgumentParser]):
     subparser.add_argument("--prefetch", "-p", type=int, default=2, help="The number of prefetched batches in memory")
     subparser.add_argument("--workers", "-w", type=int, default=os.process_cpu_count(), help="The maximum number of workers used in a batch")
 
-    subparser.set_defaults(func=command_update)
+    subparser.set_defaults(func=command)
 
 
-def command_update(args):
+def command(args):
     from .updater import Updater # dynamically load the updater to avoid loading all the torch libs on other commands
     logger.debug("command update")
     updater = Updater(drop_all=args.drop, batch_size=args.batch, max_workers=args.workers, force_process=args.force, prefetch_factor=args.prefetch, ignore_existing_fingerprint=args.ignore_existing_fingerprint)
