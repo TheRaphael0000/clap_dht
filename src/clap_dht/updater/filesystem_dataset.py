@@ -43,11 +43,12 @@ class FilesystemDataset(IterableDataset):
                     logger.info(f"Skipped (already in db): '{subpath}'")
                     continue
 
-            audio_bytes = open(fullpath, "rb").read()
-
-            if not filetype.is_audio(audio_bytes):
+            # filetype is smart and only read a few bytes
+            if not filetype.is_audio(fullpath):
                 logger.info(f"Skipped (not audio): '{subpath}'")
                 continue
+
+            audio_bytes = open(fullpath, "rb").read()
 
             logger.info(f"Loaded: '{subpath}'")
             yield (audio_bytes, subpath)

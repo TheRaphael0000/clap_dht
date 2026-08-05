@@ -18,14 +18,6 @@ from clap_dht.utils import Timer
 logger = logging.getLogger("UPDATER")
 
 
-def dataloader_cleanup(dataloader_instance=None):
-    logger.info("Cleaning up child processes...")
-    if dataloader_instance and hasattr(dataloader_instance, "_iterator"):
-        try:
-            dataloader_instance._iterator._shutdown_workers()
-        except Exception:
-            pass
-
 class Updater:
     def __init__(self, drop_all, batch_size, max_workers, force_process, prefetch_factor, ignore_existing_fingerprint):
         self.root_dir = pathlib.Path(os.getenv('ROOT_DIR'))
@@ -34,12 +26,22 @@ class Updater:
 
         self.dataset = FilesystemDataset(self.root_dir, force_process)
         self.dataloader = DataLoader(self.dataset, batch_size=batch_size, prefetch_factor=prefetch_factor, num_workers=1)
+        self.loader_iter = iter(self.dataloader)
         
-        atexit.register(dataloader_cleanup, self.dataloader)
+        atexit.register(self.stop_dataloader)
         
         self.audio_feature_extractor = AudioFeatureExtractor(max_workers, ignore_existing_fingerprint)
         self.to_save_queue = queue.Queue()
-        
+
+
+    def stop_dataloader(self):
+        logger.info(f"Stopping DataLoader worker")
+        if hasattr(self.loader_iter, '_workers'):
+            for i, worker in enumerate(self.loader_iter._workers):
+                if worker.is_alive():
+                    worker.terminate()
+                    logger.info(f"worker {i} terminated")
+                    worker.join()
 
     def saver(self):
         with Timer("Saver"):
@@ -59,7 +61,12 @@ class Updater:
                             "embedding": embedding,
                         }
                         for subpath, (fingerprint, embedding) in zip(subpaths, results)
+                        if embedding is not None
                     ]
+
+                    if len(payload) <= 0:
+                        continue
+                    
                     stmt = insert(Embedding).values(payload)
                     
                     stmt = stmt.on_conflict_do_update(
@@ -82,7 +89,7 @@ class Updater:
         saver = threading.Thread(target=self.saver)
         saver.start()
 
-        for i, (audio_bytes, subpaths) in enumerate(self.dataloader):
+        for i, (audio_bytes, subpaths) in enumerate(self.loader_iter):
             with Timer(f"Processing batch {i}", info=True):
                 results = self.audio_feature_extractor.process_batch(audio_bytes, subpaths)
                 self.to_save_queue.put((i, subpaths, results))

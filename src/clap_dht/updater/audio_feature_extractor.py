@@ -32,7 +32,7 @@ def threadpool_pipeline(func, batch, subpaths, max_workers):
             try:
                 result = future.result()
             except Exception as e:
-                logger.error(f"Can't process: '{subpath}' for '{func.__name__}' \n{e}")
+                logger.error(f"Can't '{func.__name__}': '{subpath}' \n{e}")
                 result = None
             output[subpath] = result
     return [output[subpath] for subpath in subpaths]
@@ -74,29 +74,29 @@ def fingerprint_to_bytes(base64_value):
 
 
 def resample_with_ffmpeg(audio_bytes):
-    try:
-        result = subprocess.run([
-                "ffmpeg",
-                "-threads", "1",
-                "-i", "pipe:0",
-                "-ac", "1",
-                "-ar", str(CLAP_SAMPLING_RATE),
-                "-t", str(MAX_AUDIO_SECONDS),
-                "-f", "f32le",
-                "-acodec", "pcm_f32le",
-                "-v", "quiet",
-                "pipe:1"
-            ],
-            input=audio_bytes,
-            capture_output=True,
-            check=True
-        )
-        audio_array = np.frombuffer(result.stdout, dtype=np.float32)
-        return audio_array.copy()
-        
-    except subprocess.CalledProcessError as e:
-        logger.error(f"FFmpeg decoding failed: {e.stderr or 'Unknown error'}")
-        return None
+    result = subprocess.run([
+            "ffmpeg",
+            "-threads", "1",
+            "-i", "pipe:0",
+            "-map", "0:a:0",
+            "-ac", "1",
+            "-ar", str(CLAP_SAMPLING_RATE),
+            "-t", str(MAX_AUDIO_SECONDS),
+            "-f", "f32le",
+            "-acodec", "pcm_f32le",
+            # "-v", "quiet",
+            "pipe:1"
+        ],
+        input=audio_bytes,
+        capture_output=True,
+        check=True
+    )
+    logger.debug(result.stderr.decode("utf8"))
+    audio_array = np.frombuffer(result.stdout, dtype=np.float32)
+    array_copy = audio_array.copy()
+    if len(array_copy) <= 0:
+        raise Exception("ffmpeg returned an empty output")
+    return array_copy
 
 
 class AudioFeatureExtractor:
@@ -149,10 +149,14 @@ class AudioFeatureExtractor:
         return None
 
     def clap(self, audio_arrays):
+        valid_indices = [i for i, a in enumerate(audio_arrays) if a is not None]
+        valid_audio_arrays = [audio_arrays[i] for i in valid_indices]
+        if len(valid_audio_arrays) <= 0:
+            return [None] * len(audio_arrays)
+        embeddings = []
         with Timer("clap processor"):
-            embeddings = []
             inputs = self.processor(
-                audio=audio_arrays,
+                audio=valid_audio_arrays,
                 sampling_rate=CLAP_SAMPLING_RATE,
                 return_tensors="pt"
             )
@@ -163,4 +167,5 @@ class AudioFeatureExtractor:
                 result = outputs.audio_embeds.detach().cpu().numpy()
                 for r in result:
                     embeddings.append(r)
-        return embeddings
+        valid_embeddings = [embeddings[i] if i in valid_indices else None for i in range(len(audio_arrays))]
+        return valid_embeddings

@@ -1,6 +1,6 @@
 from enum import Enum
 import logging
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 import uvicorn
 
 from clap_dht.query import Query
@@ -22,8 +22,12 @@ class ProximityFunctions(str, Enum):
 
 @app.get("/query/{external_id}")
 async def route_query(request: Request, external_id: str, proximity: ProximityFunctions = ProximityFunctions.cosine_distance, limit: int = 100):
-    query = Query(external_id=external_id, json=True, limit=limit, proximity_function=proximity.value)
-    return query.get_json()
+    try:
+        query = Query(external_id=external_id, json=True, limit=limit, proximity_function=proximity.value)
+        result = query.get_json()
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    return result
 
 
 class API:
