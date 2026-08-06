@@ -20,6 +20,7 @@ dependencies = [
     "tinytag>=2.3.0",
     "faiss-cpu>=1.15.0",
     "uvicorn>=0.52.0",
+    "u-msgpack-python>=2.8.0",
 ]
 
 [project.scripts]

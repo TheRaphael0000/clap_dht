@@ -64,6 +64,7 @@ dependencies = [
     { name = "torchaudio" },
     { name = "torchcodec" },
     { name = "transformers" },
+    { name = "u-msgpack-python" },
     { name = "uvicorn" },
 ]
 
@@ -83,6 +84,7 @@ requires-dist = [
     { name = "torchaudio", specifier = ">=2.11.0" },
     { name = "torchcodec", specifier = ">=0.15.0" },
     { name = "transformers", specifier = ">=5.14.1" },
+    { name = "u-msgpack-python", specifier = ">=2.8.0" },
     { name = "uvicorn", specifier = ">=0.52.0" },
 ]
 
@@ -1530,6 +1532,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/55/e3/70399cb7dd41c10ac53367ae42139cf4b1ca5f36bb3dc6c9d33acdb43655/typing_inspection-0.4.2.tar.gz", hash = "sha256:ba561c48a67c5958007083d386c3295464928b01faa735ab8547c5692e87f464", size = 75949, upload-time = "2025-10-01T02:14:41.687Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/dc/9b/47798a6c91d8bdb567fe2698fe81e0c6b7cb7ef4d13da4114b41d239f65d/typing_inspection-0.4.2-py3-none-any.whl", hash = "sha256:4ed1cacbdc298c220f1bd249ed5287caa16f34d44ef4e9c3d0cbad5b521545e7", size = 14611, upload-time = "2025-10-01T02:14:40.154Z" },
+]
+
+[[package]]
+name = "u-msgpack-python"
+version = "2.8.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/36/9d/a40411a475e7d4838994b7f6bcc6bfca9acc5b119ce3a7503608c4428b49/u-msgpack-python-2.8.0.tar.gz", hash = "sha256:b801a83d6ed75e6df41e44518b4f2a9c221dc2da4bcd5380e3a0feda520bc61a", size = 18167, upload-time = "2023-05-18T09:28:12.187Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b1/5e/512aeb40fd819f4660d00f96f5c7371ee36fc8c6b605128c5ee59e0b28c6/u_msgpack_python-2.8.0-py2.py3-none-any.whl", hash = "sha256:1d853d33e78b72c4228a2025b4db28cda81214076e5b0422ed0ae1b1b2bb586a", size = 10590, upload-time = "2023-05-18T09:28:10.323Z" },
 ]
 
 [[package]]

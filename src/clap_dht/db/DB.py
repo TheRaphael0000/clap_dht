@@ -11,7 +11,7 @@ logger = logging.getLogger("DB")
 class DB():
     def __init__(self):
         db_path = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}/{os.getenv('POSTGRES_DB')}"
-        self.engine = create_engine(db_path)
+        self.engine = create_engine(db_path, connect_args={'connect_timeout': 10})
         self.session = Session(self.engine)
         
 

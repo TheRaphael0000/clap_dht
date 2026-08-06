@@ -17,6 +17,7 @@ transformers.logging.set_verbosity_error()
 logger = logging.getLogger("UPDATER")
 
 CLAP_MODEL = "laion/clap-htsat-fused"
+CLAP_EMBEDDING_SIZE = 512
 CLAP_SAMPLING_RATE = 48000
 MAX_AUDIO_SECONDS = 60
 
@@ -100,7 +101,7 @@ def resample_with_ffmpeg(audio_bytes):
 
 
 class AudioFeatureExtractor:
-    def __init__(self, max_workers, ignore_existing_fingerprint):
+    def __init__(self, max_workers, ignore_existing_fingerprint, use_dht):
 
         self.max_workers = max_workers
         self.ignore_existing_fingerprint = ignore_existing_fingerprint

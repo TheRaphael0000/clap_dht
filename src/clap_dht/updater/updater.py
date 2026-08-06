@@ -19,7 +19,7 @@ logger = logging.getLogger("UPDATER")
 
 
 class Updater:
-    def __init__(self, drop_all, batch_size, max_workers, force_process, prefetch_factor, ignore_existing_fingerprint):
+    def __init__(self, drop_all, batch_size, max_workers, force_process, prefetch_factor, ignore_existing_fingerprint, use_dht):
         self.root_dir = pathlib.Path(os.getenv('ROOT_DIR'))
         self.db = DB()
         self.db.init(drop_all=drop_all)
@@ -30,7 +30,7 @@ class Updater:
         
         atexit.register(self.stop_dataloader)
         
-        self.audio_feature_extractor = AudioFeatureExtractor(max_workers, ignore_existing_fingerprint)
+        self.audio_feature_extractor = AudioFeatureExtractor(max_workers, ignore_existing_fingerprint, use_dht)
         self.to_save_queue = queue.Queue()
 
 
