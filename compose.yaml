@@ -1,13 +1,15 @@
 services:
-    updater:
+    serve:
         build: .
         env_file:
             - .env
-        command: ["clap_dht_updater"]
+        command: ["serve"]
         volumes:
             - ./music:/music:ro
         depends_on:
             - db
+        ports:
+            - 8001:80
 
     db:
         image: pgvector/pgvector:pg16

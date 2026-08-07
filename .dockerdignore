@@ -1,0 +1,9 @@
+data*
+.venv
+build
+.env*
+compose.yaml
+Dockerfile
+*.lock
+__pycache__
+*.pyc

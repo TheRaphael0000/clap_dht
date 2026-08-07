@@ -3,6 +3,7 @@ import logging
 from fastapi import FastAPI, HTTPException, Request
 import uvicorn
 
+from clap_dht.db import DB
 from clap_dht.query import Query
 from clap_dht.serve.dht_db import DHTDB
 
@@ -47,6 +48,7 @@ def create_app(with_dht):
 
 class API:
     def __init__(self, host, port, reload, no_dht):
+        db = DB() # to ensure connection to the db before starting the app
         self.host = host        
         self.port = port
         self.reload = reload

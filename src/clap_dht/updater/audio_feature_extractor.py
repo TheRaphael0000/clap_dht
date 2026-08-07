@@ -12,14 +12,10 @@ import transformers
 from transformers import ClapAudioModelWithProjection, ClapProcessor
 
 from clap_dht.utils import Timer
+from clap_dht.utils.consts import CLAP_MODEL, CLAP_SAMPLING_RATE, MAX_AUDIO_SECONDS
 
 transformers.logging.set_verbosity_error()
 logger = logging.getLogger("UPDATER")
-
-CLAP_MODEL = "laion/clap-htsat-fused"
-CLAP_EMBEDDING_SIZE = 512
-CLAP_SAMPLING_RATE = 48000
-MAX_AUDIO_SECONDS = 60
 
 
 def threadpool_pipeline(func, batch, subpaths, max_workers):

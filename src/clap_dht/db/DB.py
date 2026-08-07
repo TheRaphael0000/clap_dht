@@ -1,5 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy import text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session
 import os
 from .Base import Base
@@ -11,9 +12,19 @@ logger = logging.getLogger("DB")
 class DB():
     def __init__(self):
         db_path = f"postgresql://{os.getenv('POSTGRES_USER')}:{os.getenv('POSTGRES_PASSWORD')}@{os.getenv('POSTGRES_HOST')}/{os.getenv('POSTGRES_DB')}"
-        self.engine = create_engine(db_path, connect_args={'connect_timeout': 10})
+        self.engine = create_engine(db_path, connect_args={'connect_timeout': 2})
         self.session = Session(self.engine)
-        
+        try:
+            self.test_connection()
+            logger.info("Database connection succeeded")
+        except Exception as e:
+            logger.error(f"Database connection failed\n{e}")
+            exit()
+
+
+    def test_connection(self):
+        with self as session:
+            session.execute(text("SELECT 1"))
 
     def __enter__(self):
         return self.session.__enter__()

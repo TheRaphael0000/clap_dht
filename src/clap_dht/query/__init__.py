@@ -3,8 +3,6 @@ import logging
 import argparse
 from argparse import _SubParsersAction, ArgumentParser
 
-from clap_dht.db import Embedding
-
 from .query import Query
 
 logger = logging.getLogger("CLI")

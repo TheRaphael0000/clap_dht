@@ -1,9 +1,12 @@
 [project]
-name = "clap-dht"
+name = "clap_dht"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.13"
+maintainers = [
+  {name = "TheRaphael0000", email = "me@theraphael0000.ch"}
+]
 dependencies = [
     "fastapi[standard]>=0.136.3",
     "python-dotenv>=1.2.2",
@@ -12,10 +15,6 @@ dependencies = [
     "sqlalchemy>=2.0.50",
     "opendht>=4.0.0",
     "numpy>=2.5.1",
-    "transformers>=5.14.1",
-    "torch>=2.13.0",
-    "torchcodec>=0.15.0",
-    "torchaudio>=2.11.0",
     "filetype>=1.2.0",
     "tinytag>=2.3.0",
     "faiss-cpu>=1.15.0",
@@ -23,5 +22,20 @@ dependencies = [
     "u-msgpack-python>=2.8.0",
 ]
 
+[project.optional-dependencies]
+updater = [
+    "transformers>=5.14.1",
+    "torch>=2.13.0",
+    "torchcodec>=0.15.0",
+    "torchaudio>=2.11.0",
+]
+
 [project.scripts]
 clap_dht = "clap_dht.cli:main"
+
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/clap_dht"]

@@ -10,7 +10,8 @@ import umsgpack
 
 import logging
 
-from clap_dht.updater.audio_feature_extractor import CLAP_EMBEDDING_SIZE, CLAP_MODEL
+from clap_dht.utils.consts import CLAP_EMBEDDING_SIZE, CLAP_MODEL
+
 logger = logging.getLogger("DHTDB")
 
 
@@ -20,7 +21,6 @@ class DHTDB(DHTNode):
     def __init__(self):
         super().__init__()
         self.db = DB()
-        
         self.running_tasks = set()
              
     async def start(self):
@@ -31,6 +31,10 @@ class DHTDB(DHTNode):
 
     async def stop(self):
         await super().stop()
+
+        
+    async def info(self):
+        return await super().info()
 
     def pack_fingerprint(self, fingerprint):
         # use a list of tuple to be sure we pack in the same order
@@ -72,6 +76,8 @@ class DHTDB(DHTNode):
         value = self.pack_embedding(embedding.embedding)
 
         values = await self.get_value(key)
+        if values is None:
+            return None
         for v in values:
             if v == value:
                 logger.info(f"Already on the DHT: '{embedding.path}'")
@@ -84,6 +90,8 @@ class DHTDB(DHTNode):
     async def query(self, fingerprint):
         key = self.pack_fingerprint(fingerprint)
         values = await self.get_value(key)
+        if values is None:
+            return None
         for v in values:
             try:
                 return self.unpack_embedding(v)

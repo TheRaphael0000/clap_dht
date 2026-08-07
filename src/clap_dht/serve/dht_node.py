@@ -68,6 +68,7 @@ class DHTNode:
             await self.dht_runner.put(key_hash, dht_value, permanent=False)
         except Exception as e:
             logger.error(e)
+            raise e
 
 
     async def get_value(self, key: bytes):
@@ -81,3 +82,4 @@ class DHTNode:
             return values
         except Exception as e:
             logger.error(e)
+            raise e

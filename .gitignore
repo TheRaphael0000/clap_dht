@@ -14,3 +14,5 @@ music
 data*/
 
 .env
+
+*.zip
