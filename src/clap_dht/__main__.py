@@ -1,3 +1,3 @@
-from .cli import main
+from clap_dht.cli import main
 
 main()

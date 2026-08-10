@@ -14,7 +14,6 @@ def add_subparser(subparsers: _SubParsersAction[ArgumentParser]):
     )
     subparser.add_argument("--host", default="0.0.0.0", help="Socket host")
     subparser.add_argument("--port", default=80, type=int, help="Socket port")
-    subparser.add_argument("--reload", action="store_true", help="Auto reload (for dev)")
     subparser.add_argument("--no-dht", action="store_true", help="Start the service without DHT support")
 
     subparser.set_defaults(func=command)
@@ -23,5 +22,5 @@ def add_subparser(subparsers: _SubParsersAction[ArgumentParser]):
 def command(args):
     logger.debug("command serve")
     from .api import API
-    api = API(host=args.host, port=args.port, reload=args.reload, no_dht=args.no_dht)
+    api = API(host=args.host, port=args.port, no_dht=args.no_dht)
     api.start()

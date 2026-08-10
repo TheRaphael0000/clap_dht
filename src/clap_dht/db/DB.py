@@ -21,7 +21,6 @@ class DB():
             logger.error(f"Database connection failed\n{e}")
             exit()
 
-
     def test_connection(self):
         with self as session:
             session.execute(text("SELECT 1"))
@@ -32,14 +31,13 @@ class DB():
     def __exit__(self, *args):
         return self.session.__exit__(*args)
 
-    
-    def init(self, drop_all=False):
-        logger.info("db initalization")
+    def drop(self):
+        Base.metadata.drop_all(self.engine)
+        logger.info("Database dropped")
+
+    def create(self):
+        Base.metadata.create_all(self.engine)
         with self as session:
             session.execute(text('CREATE EXTENSION IF NOT EXISTS vector'))
             session.commit()
-        if drop_all:
-            logger.info("db dropped")
-            Base.metadata.drop_all(self.engine)
-        Base.metadata.create_all(self.engine)
-        logger.info("db initialized")
+        logger.info("Database created")

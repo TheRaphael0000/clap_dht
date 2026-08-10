@@ -47,15 +47,14 @@ def create_app(with_dht):
 
 
 class API:
-    def __init__(self, host, port, reload, no_dht):
-        db = DB() # to ensure connection to the db before starting the app
-        self.host = host        
+    def __init__(self, host, port, no_dht):
+        DB() # to ensure connection to the db before starting the app
+        self.host = host
         self.port = port
-        self.reload = reload
         self.no_dht = no_dht
         self.app, self.dht_node = create_app(not self.no_dht)
 
  
     def start(self):
-        logger.debug(f"host={self.host}, port={self.port}, reload={self.reload}")
+        logger.debug(f"host={self.host}, port={self.port}")
         uvicorn.run(self.app, host=self.host, port=self.port)

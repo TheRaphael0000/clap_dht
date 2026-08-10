@@ -10,12 +10,12 @@ class Configuration:
     def __init__(self):
         pass
 
-    def initialize(self, config_path):
+    def init(self, config_path):
         self.ini_file_path = Path(config_path)
         if not self.ini_file_path.exists():
             open(self.ini_file_path, "w").write("[settings]\n")
         self.config = Config(RepositoryIni(self.ini_file_path))
-        logger.debug(f"loading config: {self.ini_file_path}")
+        logger.debug(f"Loading config: {self.ini_file_path}")
 
     # --- DHT ---
     @property

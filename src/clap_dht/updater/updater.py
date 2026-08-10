@@ -20,10 +20,9 @@ logger = logging.getLogger("UPDATER")
 
 
 class Updater:
-    def __init__(self, drop_all, batch_size, max_workers, force_process, prefetch_factor, ignore_existing_fingerprint, use_dht):
+    def __init__(self, batch_size, max_workers, force_process, prefetch_factor, ignore_existing_fingerprint, use_dht):
         self.root_dir = pathlib.Path(config.DATA_ROOTDIR)
         self.db = DB()
-        self.db.init(drop_all=drop_all)
 
         self.dataset = FilesystemDataset(self.root_dir, force_process)
         self.dataloader = DataLoader(self.dataset, batch_size=batch_size, prefetch_factor=prefetch_factor, num_workers=1)
