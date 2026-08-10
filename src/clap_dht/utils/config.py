@@ -2,9 +2,13 @@ from pathlib import Path
 from decouple import Config, RepositoryIni
 import logging
 
-from platformdirs import user_config_dir
-
 logger = logging.getLogger("CONFIG")
+
+try:
+    from platformdirs import user_config_dir
+except:
+    logger.info("User directory not available")
+
 
 class Configuration:
     def __init__(self):
@@ -13,7 +17,9 @@ class Configuration:
     def init(self, config_path):
         self.ini_file_path = Path(config_path)
         if not self.ini_file_path.exists():
+            self.ini_file_path.parent.mkdir(parents=True)
             open(self.ini_file_path, "w").write("[settings]\n")
+
         self.config = Config(RepositoryIni(self.ini_file_path))
         logger.debug(f"Loading config: {self.ini_file_path}")
 
@@ -66,8 +72,12 @@ class Configuration:
         return self.config("NAVIDROME_DB", default="/navidrome.db")
 
     def default_config_path(self):
-        config_dir = Path(user_config_dir(appname="clap_dht", appauthor=False))
-        config_dir.mkdir(parents=True, exist_ok=True)
-        return str(config_dir / "config.ini")
+        filename = "config.ini"
+        try:
+            config_dir = Path(user_config_dir(appname="clap_dht", appauthor=False))
+            config_dir.mkdir(parents=True, exist_ok=True)
+            return str(config_dir / filename)
+        except:
+            return f"/etc/clap_dht/{filename}"
 
 config = Configuration()
