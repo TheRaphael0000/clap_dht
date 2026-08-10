@@ -15,15 +15,12 @@ class DB():
         self.engine = create_engine(db_path, connect_args={'connect_timeout': 2})
         self.session = Session(self.engine)
         try:
-            self.test_connection()
+            with self as session:
+                session.execute(text("SELECT 1"))
             logger.info("Database connection succeeded")
         except Exception as e:
             logger.error(f"Database connection failed\n{e}")
             exit()
-
-    def test_connection(self):
-        with self as session:
-            session.execute(text("SELECT 1"))
 
     def __enter__(self):
         return self.session.__enter__()

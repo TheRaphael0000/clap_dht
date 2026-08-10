@@ -47,12 +47,14 @@ class DHTNode:
 
     async def info(self):
         try:
-            return {
-                "isRunning": self.dht_runner.isRunning(),
-                "StorageLog": [l for l in self.dht_runner.getStorageLog().split("\n") if len(l) > 0][-1],
-                "Network": self.network,
-                "Node ID": str(self.dht_runner.getNodeId()),
-                "Bootstrap": f"{self.bootstrap_host}:{self.bootstrap_port}",
+            return { 
+            "dht": {
+                    "isRunning": self.dht_runner.isRunning(),
+                    "StorageLog": [l for l in self.dht_runner.getStorageLog().split("\n") if len(l) > 0][-1],
+                    "Network": self.network,
+                    "Node ID": str(self.dht_runner.getNodeId()),
+                    "Bootstrap": f"{self.bootstrap_host}:{self.bootstrap_port}",
+                }
             }
         except Exception as e:
             logger.error(e)

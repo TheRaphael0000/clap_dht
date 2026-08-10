@@ -3,6 +3,7 @@ import asyncio
 from sqlalchemy import select
 
 from clap_dht.db import DB, Embedding
+from clap_dht.query.query import Query
 from clap_dht.serve.dht_node import DHTNode
 import io
 import numpy as np
@@ -34,7 +35,8 @@ class DHTDB(DHTNode):
 
         
     async def info(self):
-        return await super().info()
+        infos = await super().info()
+        return infos
 
     def pack_fingerprint(self, fingerprint):
         # use a list of tuple to be sure we pack in the same order

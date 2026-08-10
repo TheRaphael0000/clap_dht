@@ -70,3 +70,8 @@ class Query:
             stmt = select(Embedding, proximity_expr).filter(proximity_expr > 0).order_by(self.order_by_factor * proximity_expr).limit(self.limit)
             results = session.execute(stmt).all()
             return [r for r in results]
+
+    @staticmethod
+    def count():
+        with DB() as session:
+            return session.query(Embedding.path).count()

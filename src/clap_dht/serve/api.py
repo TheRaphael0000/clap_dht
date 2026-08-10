@@ -5,6 +5,7 @@ import uvicorn
 
 from clap_dht.db import DB
 from clap_dht.query import Query
+from clap_dht.serve.db_data import DBDATA
 from clap_dht.serve.dht_db import DHTDB
 
 logger = logging.getLogger("API")
@@ -22,6 +23,8 @@ def create_app(with_dht):
     else:
         dht_node = None
         app = FastAPI()
+        
+    db_data = DBDATA()
 
     @app.get("/")
     async def route_info():
@@ -29,7 +32,8 @@ def create_app(with_dht):
             "up": True
         }
         if dht_node:
-            info["dht"] = await dht_node.info()
+            info |= await dht_node.info()
+        info |= db_data.info()
         
         return info
 
