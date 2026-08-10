@@ -1,18 +1,12 @@
 import argparse
 import logging
 
-import dotenv
-
 from clap_dht.updater import add_subparser as add_subparser_updater
 from clap_dht.navidrome import add_subparser as add_subparser_navidrome
 from clap_dht.query import add_subparser as add_subparser_query
 from clap_dht.serve import add_subparser as add_subparser_serve
 
-logger = logging.getLogger("CLI")
-
 def main():
-    dotenv.load_dotenv()
-
     parser = argparse.ArgumentParser(
         prog="CLAP DHT CLI",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,

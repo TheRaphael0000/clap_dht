@@ -12,7 +12,7 @@ import transformers
 from transformers import ClapAudioModelWithProjection, ClapProcessor
 
 from clap_dht.utils import Timer
-from clap_dht.utils.consts import CLAP_MODEL, CLAP_SAMPLING_RATE, MAX_AUDIO_SECONDS
+from clap_dht.utils.consts import CLAP_MODEL, CLAP_SAMPLING_RATE, RESAMPLE_MAX_DURATION
 
 transformers.logging.set_verbosity_error()
 logger = logging.getLogger("UPDATER")
@@ -78,7 +78,7 @@ def resample_with_ffmpeg(audio_bytes):
             "-map", "0:a:0",
             "-ac", "1",
             "-ar", str(CLAP_SAMPLING_RATE),
-            "-t", str(MAX_AUDIO_SECONDS),
+            "-t", str(RESAMPLE_MAX_DURATION),
             "-f", "f32le",
             "-acodec", "pcm_f32le",
             # "-v", "quiet",

@@ -9,7 +9,6 @@ maintainers = [
 ]
 dependencies = [
     "fastapi[standard]>=0.136.3",
-    "python-dotenv>=1.2.2",
     "pgvector>=0.4.2",
     "psycopg2-binary>=2.9.12",
     "sqlalchemy>=2.0.50",
@@ -20,6 +19,7 @@ dependencies = [
     "faiss-cpu>=1.15.0",
     "uvicorn>=0.52.0",
     "u-msgpack-python>=2.8.0",
+    "python-decouple>=3.8",
 ]
 
 [project.optional-dependencies]

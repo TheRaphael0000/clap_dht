@@ -6,6 +6,8 @@ from sqlalchemy import bindparam, select, update, func
 from clap_dht.db import DB, Embedding
 
 import logging
+
+from clap_dht.utils.config import config
 logger = logging.getLogger("NAVIDROME")
 
 
@@ -14,7 +16,7 @@ import sqlite3
 
 class Navidrome:
     def __init__(self):
-        self.uri = f"file:{os.getenv("NAVIDROME_DB")}?mode=ro&immutable=1"
+        self.uri = f"file:{config.NAVIDROME_DB}?mode=ro&immutable=1"
         self.con = sqlite3.connect(self.uri, uri=True)
 
     def get_auth_params(self, username: str, password: str) -> dict:
@@ -38,9 +40,9 @@ class Navidrome:
 
     def query_navidrome(self, endpoint: str, extra_params: dict = None) -> dict:
         """Sends a query request to a specific Navidrome API endpoint."""
-        url = f"{os.getenv("NAVIDROME_URL").rstrip('/')}/rest/{endpoint}"
+        url = f"{config.NAVIDROME_URL.rstrip('/')}/rest/{endpoint}"
 
-        params = self.get_auth_params(os.getenv("NAVIDROME_USER"), os.getenv("NAVIDROME_PASSWORD"))
+        params = self.get_auth_params(config.NAVIDROME_USER, config.NAVIDROME_PASSWORD)
         if extra_params:
             params.update(extra_params)
 

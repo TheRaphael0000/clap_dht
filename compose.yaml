@@ -3,9 +3,9 @@ services:
         build: .
         env_file:
             - .env
+        environment:
+            - POSTGRES_HOST=db:5432
         command: ["serve"]
-        volumes:
-            - ./music:/music:ro
         depends_on:
             - db
         ports:

@@ -2,10 +2,9 @@ import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 import opendht.aio as dht
-import os
 
+from clap_dht.utils.config import config
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("DHT")
 
 
@@ -13,8 +12,8 @@ class DHTNode:
     def __init__(self):
         logger.info("initializing")
 
-        self.bootstrap_host, self.bootstrap_port = os.getenv("DHT_BOOTSTRAP").split(":")
-        self.network = int(os.getenv("DHT_NETWORK"))
+        self.bootstrap_host, self.bootstrap_port = config.DHT_BOOTSTRAP.split(":")
+        self.network = int(config.DHT_NETWORK)
 
         logger.info(f"bootstrap: {self.bootstrap_host}:{self.bootstrap_port}")
         logger.info(f"network: {self.network}")
@@ -65,7 +64,7 @@ class DHTNode:
             key_hash = dht.InfoHash.get(key)
             logger.debug(f"Putting {key_hash}")
             dht_value = dht.Value(value)
-            await self.dht_runner.put(key_hash, dht_value, permanent=False)
+            await self.dht_runner.put(key_hash, dht_value, permanent=True)
         except Exception as e:
             logger.error(e)
             raise e

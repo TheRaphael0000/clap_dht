@@ -13,6 +13,7 @@ from clap_dht.db import DB, Embedding
 from clap_dht.updater.audio_feature_extractor import AudioFeatureExtractor
 from clap_dht.updater.filesystem_dataset import FilesystemDataset
 
+from clap_dht.utils.config import config
 from clap_dht.utils import Timer
 
 logger = logging.getLogger("UPDATER")
@@ -20,7 +21,7 @@ logger = logging.getLogger("UPDATER")
 
 class Updater:
     def __init__(self, drop_all, batch_size, max_workers, force_process, prefetch_factor, ignore_existing_fingerprint, use_dht):
-        self.root_dir = pathlib.Path(os.getenv('ROOT_DIR'))
+        self.root_dir = pathlib.Path(config.DATA_ROOTDIR)
         self.db = DB()
         self.db.init(drop_all=drop_all)
 
