@@ -1,15 +1,17 @@
 from pathlib import Path
-from platformdirs import user_config_dir
 from decouple import Config, RepositoryIni
 import logging
+
+from platformdirs import user_config_dir
 
 logger = logging.getLogger("CONFIG")
 
 class Configuration:
     def __init__(self):
-        config_dir = Path(user_config_dir(appname="clap_dht", appauthor=False))
-        config_dir.mkdir(parents=True, exist_ok=True)
-        self.ini_file_path = config_dir / "config.ini"
+        pass
+
+    def initialize(self, config_path):
+        self.ini_file_path = Path(config_path)
         if not self.ini_file_path.exists():
             open(self.ini_file_path, "w").write("[settings]\n")
         self.config = Config(RepositoryIni(self.ini_file_path))
@@ -63,5 +65,9 @@ class Configuration:
     def NAVIDROME_DB(self) -> str:
         return self.config("NAVIDROME_DB", default="/navidrome.db")
 
+    def default_config_path(self):
+        config_dir = Path(user_config_dir(appname="clap_dht", appauthor=False))
+        config_dir.mkdir(parents=True, exist_ok=True)
+        return str(config_dir / "config.ini")
 
 config = Configuration()
