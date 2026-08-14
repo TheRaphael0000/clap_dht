@@ -40,12 +40,12 @@ class FilesystemDataset(IterableDataset):
 
             if not self.force_process:
                 if self.db_checker.check(subpath):
-                    logger.info(f"Skipped (already in db): '{subpath}'")
+                    logger.debug(f"Skipped (already in db): '{subpath}'")
                     continue
 
             # filetype is smart and only read a few bytes
             if not filetype.is_audio(fullpath):
-                logger.info(f"Skipped (not audio): '{subpath}'")
+                logger.debug(f"Skipped (not audio): '{subpath}'")
                 continue
 
             audio_bytes = open(fullpath, "rb").read()

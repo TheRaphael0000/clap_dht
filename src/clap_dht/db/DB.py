@@ -33,8 +33,10 @@ class DB():
         logger.info("Database dropped")
 
     def create(self):
-        Base.metadata.create_all(self.engine)
         with self as session:
             session.execute(text('CREATE EXTENSION IF NOT EXISTS vector'))
+            session.commit()
+            Base.metadata.create_all(self.engine)
+            session.execute(text('CREATE INDEX ON embeddings USING ivfflat (embedding vector_cosine_ops) WITH (lists = 250);'))
             session.commit()
         logger.info("Database created")

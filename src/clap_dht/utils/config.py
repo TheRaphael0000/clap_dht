@@ -4,12 +4,6 @@ import logging
 
 logger = logging.getLogger("CONFIG")
 
-try:
-    from platformdirs import user_config_dir
-except:
-    logger.info("User directory not available")
-
-
 class Configuration:
     def __init__(self):
         pass
@@ -74,10 +68,12 @@ class Configuration:
     def default_config_path(self):
         filename = "config.ini"
         try:
+            from platformdirs import user_config_dir
             config_dir = Path(user_config_dir(appname="clap_dht", appauthor=False))
             config_dir.mkdir(parents=True, exist_ok=True)
             return str(config_dir / filename)
         except:
+            logger.info("User directory not available")
             return f"/etc/clap_dht/{filename}"
 
 config = Configuration()
