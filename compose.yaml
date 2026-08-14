@@ -10,7 +10,8 @@ services:
             - db
         ports:
             - 8001:80
-
+        networks:
+          - netdb
     db:
         image: pgvector/pgvector:pg16
         env_file:
@@ -19,3 +20,8 @@ services:
             - ./data/db:/var/lib/postgresql/data
         ports:
             - 5432:5432
+        networks:
+          - netdb
+
+networks:
+  netdb:
