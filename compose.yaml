@@ -12,6 +12,7 @@ services:
             - 8001:80
         networks:
           - netdb
+        restart: always
     db:
         image: pgvector/pgvector:pg16
         env_file:
