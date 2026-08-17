@@ -1,11 +1,11 @@
 import json
-
-from sqlalchemy import select
-from pgvector.sqlalchemy import avg
-
-from clap_dht.db import DB, Embedding
 import logging
 
+from sqlalchemy import select, func
+from pgvector.sqlalchemy import avg
+import numpy as np
+
+from clap_dht.db import DB, Embedding
 
 logger = logging.getLogger("QUERY")
 
@@ -20,14 +20,15 @@ class Query:
         # "jaccard_distance": Embedding.embedding.jaccard_distance,
     }
 
-    def __init__(self, proximity_function, limit, json, path = None, songId = None, albumId = None, artistId = None):
+    def __init__(self, proximity_function, limit, json, temperature: float, path = None, songId = None, albumId = None, artistId = None):
         logger.debug(f"Query created proximity_function={proximity_function} limit={limit} json={json} path={path} songId={songId} albumId={albumId} artistId={artistId}")
         self.db = DB()
         self.proximity_function = self.proximity_functions[proximity_function][0]
         self.order_by_factor = self.proximity_functions[proximity_function][1]
         self.limit = limit
-        self.path = path
         self.json = json
+        self.temperature = min(max(temperature, 1e-4), 1)
+        self.path = path
         self.songId = songId
         self.albumId = albumId
         self.artistId = artistId
@@ -82,9 +83,37 @@ class Query:
     def query_similar(self, embedding):
         with self.db as session:
             proximity_expr = self.proximity_function(embedding).label("metric")
-            stmt = select(Embedding, proximity_expr).filter(proximity_expr > 0).order_by(self.order_by_factor * proximity_expr).limit(self.limit)
+
+            if self.temperature:
+                db_size = session.scalar(select(func.count()).select_from(Embedding))
+                # we don't want to query the whole database to do a real temperature softmax
+                # so we are eye balling an additional number of samples ¯\_(ツ)_/¯
+                # a not very scientific formula with a lot of magic numbers:
+                query_limit = int((3 * self.limit) + (10 * max(self.temperature, 0.3) * (db_size ** 0.5)))
+            else:
+                query_limit = self.limit
+
+            stmt = select(Embedding, proximity_expr).filter(proximity_expr > 0).order_by(self.order_by_factor * proximity_expr).limit(query_limit)
             results = session.execute(stmt).all()
-            return [r for r in results]
+
+            # softmax temperature
+            if self.temperature:
+                distances = np.array([r.metric for r in results])
+                similarities = -distances
+        
+                scaled_sims = similarities / self.temperature
+                exp_sims = np.exp(scaled_sims - np.max(scaled_sims))
+                probabilities = exp_sims / np.sum(exp_sims)
+
+                sampled_indices = np.random.choice(
+                    len(results), 
+                    size=self.limit, 
+                    replace=False, 
+                    p=probabilities
+                )
+                return [results[i] for i in sampled_indices]
+            else:
+                return results
 
     @staticmethod
     def count():
