@@ -12,6 +12,7 @@ logger = logging.getLogger("NAVIDROME")
 
 from tqdm import tqdm
 import re
+import time
 
 
 class Navidrome:
@@ -89,7 +90,10 @@ class Navidrome:
                 return None
             offset += size
 
-    def update_ids(self):
+    def update_ids(self, quick_scan=False, full_scan=False):
+        if quick_scan or full_scan:
+            self.scan(full_scan)
+
         logger.info("Updating ids")
         lookup_data = []
 
@@ -113,3 +117,21 @@ class Navidrome:
             unmateched_count = session.scalar(select(func.count()).select_from(Embedding).where(Embedding.songId == None))
             total_count = session.scalar(select(func.count()).select_from(Embedding))
             logger.info(f"Unmatched: {unmateched_count}/{total_count}")
+
+    def scan(self, full_scan=False):
+        args = {}
+        if full_scan:
+            args |= { "fullScan": True}
+        response = self.query_navidrome("startScan", args)
+        logger.debug(f"startScan\n{response}")
+
+        while True:
+            time.sleep(0.95)
+            response = self.query_navidrome("getScanStatus")
+            logger.debug(f"getScanStatus\n{response}")
+            status = response["scanStatus"]
+            if status["scanning"] != True:
+                return
+            folderCount = status["folderCount"]
+            elapsedTime = status["elapsedTime"]
+            logger.info(f"Total Folders Scanned: {folderCount}, Elapsed Time: {int(elapsedTime/1e9)}s")
