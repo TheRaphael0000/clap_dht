@@ -45,7 +45,7 @@ class Query:
 
     def get_json(self):
         results = self.get()
-        output = [{"path": embedding.path, "songId": embedding.songId, "score": score} for embedding, score in results]
+        output = [{"path": embedding.path, "songId": embedding.songId, "albumId": embedding.albumId, "artistId": embedding.artistId, "score": score} for embedding, score in results]
         return output
 
     def get(self):

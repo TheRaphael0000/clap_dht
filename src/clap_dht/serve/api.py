@@ -42,11 +42,11 @@ def create_app(with_dht):
     async def route_query(request: Request, songId: str = None, albumId: str = None, artistId: str = None, proximity: ProximityFunctions = ProximityFunctions.cosine_distance, limit: int = 100):
         try:
             query = Query(songId=songId, albumId=albumId, artistId=artistId, json=True, limit=limit, proximity_function=proximity.value)
-            result = query.get_json()
+            return query.get_json()
         except Exception as e:
             raise HTTPException(status_code=404, detail=str(e))
-        return result
 
+    # create_app() return
     return app, dht_node
 
 
