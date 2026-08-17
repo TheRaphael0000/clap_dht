@@ -65,18 +65,32 @@ class Navidrome:
             logger.error(f"HTTP Request failed: {e}")
             return None
 
-    def album_iterator(self, size=500):
+    def album_list_iterator(self, size=500):
         offset = 0
         while True:
             albums = self.query_navidrome("getAlbumList", {"type": "newest", "size": size, "offset": offset})
             albumList = albums["albumList"]
             if "album" not in albumList:
                 return
-            albums_id = [a["id"] for a in albumList["album"]]
-            for id in albums_id:
-                album = self.query_navidrome("getAlbum", {"id": id})
-                yield album["album"]
+            for album in albumList["album"]:
+                yield album
             offset += size
+
+    def album_iterator(self, size=500):
+        for album in self.album_list_iterator(size):
+            album = self.query_navidrome("getAlbum", {"id": album["id"]})
+            yield album["album"]
+
+    def album_count(self):
+        # there might be a better way :(
+        return len(list(self.album_list_iterator()))
+
+    def song_count(self):
+        # there might be a better way :(
+        total = 0
+        for album in self.album_list_iterator():
+            total += album["songCount"]
+        return total
 
     def songs_iterator(self, size=2000):
         offset = 0
@@ -92,15 +106,15 @@ class Navidrome:
 
     def update_ids(self, quick_scan=False, full_scan=False):
         if quick_scan or full_scan:
-            self.scan(full_scan)
+            self.start_scan(full_scan)
 
         logger.info("Updating ids")
         lookup_data = []
 
         libPath = "/music/"
         
-        logger.info("Loading navidrome ids")
-        for song in tqdm(self.songs_iterator()):
+        # get the number of songs just for UX, kinda bad but i like it better this way
+        for song in tqdm(self.songs_iterator(), desc="Loading navidrome ids", total=self.song_count()):
             relative_path = re.sub(rf"^{libPath}(.*)$", r"\1", song["path"])
             lookup_data.append({"path": relative_path, "songId": song["id"], "albumId": song["albumId"], "artistId": song["artistId"]})
 
@@ -118,20 +132,32 @@ class Navidrome:
             total_count = session.scalar(select(func.count()).select_from(Embedding))
             logger.info(f"Unmatched: {unmateched_count}/{total_count}")
 
-    def scan(self, full_scan=False):
+    def start_scan(self, full_scan=False):
         args = {}
         if full_scan:
             args |= { "fullScan": True}
         response = self.query_navidrome("startScan", args)
         logger.debug(f"startScan\n{response}")
+        self.scan_progress()
 
-        while True:
-            time.sleep(0.95)
-            response = self.query_navidrome("getScanStatus")
-            logger.debug(f"getScanStatus\n{response}")
-            status = response["scanStatus"]
-            if status["scanning"] != True:
-                return
-            folderCount = status["folderCount"]
-            elapsedTime = status["elapsedTime"]
-            logger.info(f"Total Folders Scanned: {folderCount}, Elapsed Time: {int(elapsedTime/1e9)}s")
+    def scan_progress(self):
+        # get the number of albums just for UX, kinda bad but i like it better this way
+        albums_count = self.album_count()
+
+        with tqdm(total=albums_count, unit=" albums") as pbar:
+            while True:
+                response = self.query_navidrome("getScanStatus")
+                logger.debug(f"getScanStatus\n{response}")
+
+                status = response["scanStatus"]
+                scanType = status["scanType"].capitalize()
+                folderCount = status["folderCount"]
+                elapsedTime = status["elapsedTime"] / 1e9
+                pbar.n = folderCount
+                pbar.desc = f"{scanType} scan in progress ({int(elapsedTime)}s)"
+                pbar.refresh()
+
+                if status["scanning"] != True:
+                    return
+                
+                time.sleep(0.95)
