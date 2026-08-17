@@ -1,7 +1,7 @@
 import hashlib
 import os
 import requests
-from sqlalchemy import bindparam, select, update, func
+from sqlalchemy import select, update, func
 
 from clap_dht.db import DB, Embedding
 
@@ -10,14 +10,13 @@ import logging
 from clap_dht.utils.config import config
 logger = logging.getLogger("NAVIDROME")
 
-
-import sqlite3
+from tqdm import tqdm
+import re
 
 
 class Navidrome:
     def __init__(self):
-        self.uri = f"file:{config.NAVIDROME_DB}?mode=ro&immutable=1"
-        self.con = sqlite3.connect(self.uri, uri=True)
+        pass
 
     def get_auth_params(self, username: str, password: str) -> dict:
         """
@@ -33,7 +32,7 @@ class Navidrome:
             "t": token,
             "s": salt,
             "v": "1.16.1",
-            "c": "python-script",
+            "c": "clap_dht",
             "f": "json",
         }
 
@@ -47,6 +46,7 @@ class Navidrome:
             params.update(extra_params)
 
         try:
+            logger.debug(url)
             response = requests.get(url, params=params)
             response.raise_for_status()
 
@@ -64,9 +64,8 @@ class Navidrome:
             logger.error(f"HTTP Request failed: {e}")
             return None
 
-    def song_iterator(self):
+    def album_iterator(self, size=500):
         offset = 0
-        size = 500
         while True:
             albums = self.query_navidrome("getAlbumList", {"type": "newest", "size": size, "offset": offset})
             albumList = albums["albumList"]
@@ -75,17 +74,31 @@ class Navidrome:
             albums_id = [a["id"] for a in albumList["album"]]
             for id in albums_id:
                 album = self.query_navidrome("getAlbum", {"id": id})
-                for song in album["album"]["song"]:
+                yield album["album"]
+            offset += size
+
+    def songs_iterator(self, size=2000):
+        offset = 0
+        while True:
+            results = self.query_navidrome("search3", {"query": "", "artistCount": "0", "albumCount": "0", "songCount": size, "songOffset": offset})
+            try:
+                songs = results["searchResult3"]["song"]
+                for song in songs:
                     yield song
+            except:
+                return None
             offset += size
 
     def update_ids(self):
-        cur = self.con.cursor()
+        logger.info("Updating ids")
+        lookup_data = []
 
-        logger.info("Loading Navidrome DB")
-        res = cur.execute("SELECT id, path FROM media_file")
-        result = res.fetchall()
-        lookup_data = [{"path": path, "external_id": id} for id, path in result]
+        libPath = "/music/"
+        
+        logger.info("Loading navidrome ids")
+        for song in tqdm(self.songs_iterator()):
+            relative_path = re.sub(rf"^{libPath}(.*)$", r"\1", song["path"])
+            lookup_data.append({"path": relative_path, "songId": song["id"], "albumId": song["albumId"], "artistId": song["artistId"]})
 
         db = DB()
         with db as session:
@@ -97,6 +110,6 @@ class Navidrome:
             session.execute(update(Embedding), lookup_data)
             session.commit()
 
-            unmateched_count = session.scalar(select(func.count()).select_from(Embedding).where(Embedding.external_id == None))
+            unmateched_count = session.scalar(select(func.count()).select_from(Embedding).where(Embedding.songId == None))
             total_count = session.scalar(select(func.count()).select_from(Embedding))
             logger.info(f"Unmatched: {unmateched_count}/{total_count}")

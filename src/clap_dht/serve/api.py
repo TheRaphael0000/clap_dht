@@ -38,10 +38,10 @@ def create_app(with_dht):
         return info
 
 
-    @app.get("/query/{external_id}")
-    async def route_query(request: Request, external_id: str, proximity: ProximityFunctions = ProximityFunctions.cosine_distance, limit: int = 100):
+    @app.get("/similar_songs")
+    async def route_query(request: Request, songId: str = None, albumId: str = None, artistId: str = None, proximity: ProximityFunctions = ProximityFunctions.cosine_distance, limit: int = 100):
         try:
-            query = Query(external_id=external_id, json=True, limit=limit, proximity_function=proximity.value)
+            query = Query(songId=songId, albumId=albumId, artistId=artistId, json=True, limit=limit, proximity_function=proximity.value)
             result = query.get_json()
         except Exception as e:
             raise HTTPException(status_code=404, detail=str(e))

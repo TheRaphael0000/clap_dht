@@ -10,8 +10,8 @@ from .Base import Base
 class Embedding(Base):
     __tablename__ = 'embeddings'
     path = mapped_column(String(500), primary_key=True)
-    external_id = mapped_column(String(50), index=True)
     fingerprint = mapped_column(LargeBinary())
     embedding = mapped_column(VECTOR(CLAP_EMBEDDING_SIZE))
-    # from_dht = mapped_column(Boolean())
-    remove_flag = mapped_column(Boolean())
+    songId = mapped_column(String(50), index=True)
+    albumId = mapped_column(String(50), index=True)
+    artistId = mapped_column(String(50), index=True)

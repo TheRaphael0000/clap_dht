@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-updater = [
+full = [
     "transformers>=5.14.1",
     "torch>=2.13.0",
     "torchcodec>=0.15.0",

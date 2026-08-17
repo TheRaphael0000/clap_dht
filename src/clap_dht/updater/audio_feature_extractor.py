@@ -12,7 +12,7 @@ import transformers
 from transformers import ClapAudioModelWithProjection, ClapProcessor
 
 from clap_dht.utils import Timer
-from clap_dht.utils.consts import CLAP_MODEL, CLAP_SAMPLING_RATE, RESAMPLE_MAX_DURATION
+from clap_dht.utils.consts import CLAP_PROCESSOR, CLAP_MODEL, CLAP_SAMPLING_RATE, RESAMPLE_MAX_DURATION
 
 transformers.logging.set_verbosity_error()
 logger = logging.getLogger("UPDATER")
@@ -107,8 +107,8 @@ class AudioFeatureExtractor:
         logger.debug(f"Embedding Projection Device: {self.device}")
 
         logger.debug("loading clap model...")
-        self.processor = ClapProcessor.from_pretrained(CLAP_MODEL, local_files_only=True)
-        self.model = ClapAudioModelWithProjection.from_pretrained(CLAP_MODEL, local_files_only=True).to(self.device)
+        self.processor = ClapProcessor.from_pretrained(CLAP_PROCESSOR)
+        self.model = ClapAudioModelWithProjection.from_pretrained(CLAP_MODEL).to(self.device)
         logger.debug("clap model loaded")
         self.model.eval()
         
